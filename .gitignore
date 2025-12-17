@@ -1,0 +1,103 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###finn@lenovo:~/Desktop/taskmanager$ tree
+               #.
+               #├── docker-compose.prod.yml
+               #├── docker-compose.yml
+               #├── Dockerfile
+               #├── HELP.md
+               #├── logs
+               #├── mvnw
+               #├── mvnw.cmd
+               #├── pom.xml
+               #├── src
+               #│   ├── main
+               #│   │   ├── java
+               #│   │   │   └── com
+               #│   │   │       └── manager
+               #│   │   │           └── taskmanager
+               #│   │   │               ├── config
+               #│   │   │               │   ├── ModelMapper.java
+               #│   │   │               │   └── SecurityConfig.java
+               #│   │   │               ├── controller
+               #│   │   │               │   ├── AuthController.java
+               #│   │   │               │   ├── TaskController.java
+               #│   │   │               │   └── UserController.java
+               #│   │   │               ├── dto
+               #│   │   │               │   ├── AuthResponseDTO.java
+               #│   │   │               │   ├── LoginRequestDTO.java
+               #│   │   │               │   ├── RegisterRequestDTO.java
+               #│   │   │               │   ├── TaskRequestDTO.java
+               #│   │   │               │   ├── TaskResponseDTO.java
+               #│   │   │               │   ├── UserRequestDTO.java
+               #│   │   │               │   └── UserResponseDTO.java
+               #│   │   │               ├── exception
+               #│   │   │               │   ├── GlobalExceptionHandler.java
+               #│   │   │               │   └── TaskNotFoundException.java
+               #│   │   │               ├── model
+               #│   │   │               │   ├── Role.java
+               #│   │   │               │   ├── Status.java
+               #│   │   │               │   ├── Task.java
+               #│   │   │               │   └── User.java
+               #│   │   │               ├── repository
+               #│   │   │               │   ├── TaskRepository.java
+               #│   │   │               │   └── UserRepository.java
+               #│   │   │               ├── security
+               #│   │   │               │   ├── CustomUserDetailsService.java
+               #│   │   │               │   ├── JwtAuthenticationFilter.java
+               #│   │   │               │   └── JwtUtil.java
+               #│   │   │               ├── service
+               #│   │   │               │   ├── TaskService.java
+               #│   │   │               │   └── UserService.java
+               #│   │   │               └── TaskmanagerApplication.java
+               #│   │   └── resources
+               #│   │       ├── application.properties
+               #│   │       ├── static
+               #│   │       └── templates
+               #│   └── test
+               #│       └── java
+               #│           └── com
+               #│               └── manager
+               #│                   └── taskmanager
+               #│                       └── TaskmanagerApplicationTests.java
+               #└── target
+               #    ├── classes
+               #    │   ├── application.properties
+               #    │   └── com
+               #    │       └── manager
+               #    │           └── taskmanager
+               #    │               └── TaskmanagerApplication.class
+               #    └── generated-sources
+               #        └── annotations
+               #
+               #31 directories, 37 files
+.vscode/
