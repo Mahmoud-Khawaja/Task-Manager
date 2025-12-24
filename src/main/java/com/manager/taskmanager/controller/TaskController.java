@@ -64,7 +64,6 @@ public class TaskController {
             @PathVariable Long id,
             Authentication authentication) {
 
-        TaskResponseDTO task = taskService.getTaskById(id);
         Long taskUserId = taskService.getTaskOwnerId(id);
 
         if (!isAuthorized(taskUserId, authentication)) {
@@ -73,6 +72,7 @@ public class TaskController {
                     .body("You can only view your own tasks!");
         }
 
+        TaskResponseDTO task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
 

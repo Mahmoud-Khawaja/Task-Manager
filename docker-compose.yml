@@ -18,6 +18,8 @@ services:
 
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_MANAGER_TASKMANAGER: DEBUG
 
     depends_on:
       db:
@@ -56,8 +58,6 @@ services:
 
 volumes:
   pgdata:
-    driver: local
-  logs:
     driver: local
 
 networks:

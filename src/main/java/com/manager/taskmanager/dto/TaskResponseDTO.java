@@ -16,6 +16,7 @@ public class TaskResponseDTO {
     private String title;
     private String description;
     private Status status;
+    private UserResponseDTO user;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

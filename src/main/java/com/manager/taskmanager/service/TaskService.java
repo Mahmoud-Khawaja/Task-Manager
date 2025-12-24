@@ -10,22 +10,26 @@ import com.manager.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    // Clean mapping using configured ModelMapper
     private TaskResponseDTO mapToDTO(Task task) {
         return modelMapper.map(task, TaskResponseDTO.class);
     }
 
+    @Transactional
     public TaskResponseDTO createTask(Long userId, TaskRequestDTO dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new TaskNotFoundException("User not found with id: " + userId));
@@ -70,6 +74,7 @@ public class TaskService {
         return task.getUser().getId();
     }
 
+    @Transactional
     public TaskResponseDTO updateTask(Long id, TaskRequestDTO dto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
@@ -82,6 +87,7 @@ public class TaskService {
         return mapToDTO(updatedTask);
     }
 
+    @Transactional
     public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));

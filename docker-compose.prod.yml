@@ -7,18 +7,27 @@ services:
       dockerfile: Dockerfile
     container_name: taskmanager-app-prod
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_JPA_SHOW_SQL: "false"
-      LOGGING_LEVEL_ROOT: INFO
+
+      # Logging Configuration - PRODUCTION
+      LOGGING_LEVEL_ROOT: WARN
       LOGGING_LEVEL_COM_MANAGER_TASKMANAGER: INFO
+      LOGGING_FILE_NAME: /app/logs/application.log
+      LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+      LOGGING_PATTERN_FILE: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when_authorized
 
     depends_on:
       db:
@@ -51,6 +60,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # PostgreSQL Performance Tuning
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: always
@@ -73,8 +84,6 @@ services:
 
 volumes:
   pgdata:
-    driver: local
-  logs:
     driver: local
 
 networks:
