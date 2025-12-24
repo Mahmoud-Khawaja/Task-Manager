@@ -36,7 +36,7 @@ jobs:
           echo "SERVER_PORT=${{ vars.SERVER_PORT }}" >> .env
 
       - name: Start Services
-        run: docker-compose -f docker-compose.prod.yml up -d --build
+        run: docker compose -f docker-compose.prod.yml up -d --build
 
       - name: Run Maven Tests
         run: mvn clean test
@@ -57,7 +57,7 @@ jobs:
 
       - name: Stop Services
         if: always()
-        run: docker-compose -f docker-compose.prod.yml down
+        run: docker compose -f docker-compose.prod.yml down
 
   build-and-push:
     name: Build & Push Docker Image
