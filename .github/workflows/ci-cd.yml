@@ -25,9 +25,6 @@ jobs:
 
       - name: Start Services
         run: docker compose -f docker-compose.prod.yml up -d --build
-        
-      - name: Start Services
-        run: docker compose -f docker-compose.prod.yml up -d --build
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -38,9 +35,16 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
-          
+
       - name: Run Maven Tests
         run: mvn clean test
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
 
       - name: Upload Test Results
         if: always()
