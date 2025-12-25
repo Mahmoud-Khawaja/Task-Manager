@@ -78,13 +78,13 @@ class AuthControllerTest {
         registerRequestDTO = RegisterRequestDTO.builder()
                 .username("newuser")
                 .email("newuser@example.com")
-                .password("password123")
+                .password("Password123")
                 .role(Role.USER)
                 .build();
 
         loginRequestDTO = LoginRequestDTO.builder()
                 .username("testuser")
-                .password("password123")
+                .password("Password123")
                 .build();
 
         userDetails = org.springframework.security.core.userdetails.User.builder()
@@ -158,6 +158,86 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/auth/register - Should return 400 when password is invalid")
+    void register_InvalidPassword() throws Exception {
+        RegisterRequestDTO invalidPasswordDTO = RegisterRequestDTO.builder()
+                .username("newuser")
+                .email("newuser@example.com")
+                .password("password") // No uppercase or digit
+                .role(Role.USER)
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidPasswordDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").value("Password must contain at least one uppercase letter, one lowercase letter, and one digit"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register - Should return 400 when password is too short")
+    void register_PasswordTooShort() throws Exception {
+        RegisterRequestDTO shortPasswordDTO = RegisterRequestDTO.builder()
+                .username("newuser")
+                .email("newuser@example.com")
+                .password("Pass1") // Less than 8 characters
+                .role(Role.USER)
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(shortPasswordDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").exists());
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register - Should return 400 when username is too short")
+    void register_UsernameTooShort() throws Exception {
+        RegisterRequestDTO shortUsernameDTO = RegisterRequestDTO.builder()
+                .username("ab") // Less than 3 characters
+                .email("newuser@example.com")
+                .password("Password123")
+                .role(Role.USER)
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(shortUsernameDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.username").value("Username must be between 3 and 50 characters"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register - Should return 400 when email is invalid")
+    void register_InvalidEmail() throws Exception {
+        RegisterRequestDTO invalidEmailDTO = RegisterRequestDTO.builder()
+                .username("newuser")
+                .email("invalid-email") // Invalid email format
+                .password("Password123")
+                .role(Role.USER)
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidEmailDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.email").value("Email should be valid"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("POST /api/auth/login - Should login successfully")
     void login_Success() throws Exception {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -200,5 +280,41 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("Invalid username or password!"));
 
         verify(authenticationManager, times(1)).authenticate(any());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/login - Should return 400 when username is blank")
+    void login_BlankUsername() throws Exception {
+        LoginRequestDTO blankUsernameDTO = LoginRequestDTO.builder()
+                .username("")
+                .password("Password123")
+                .build();
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(blankUsernameDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.username").value("Username is required"));
+
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/login - Should return 400 when password is blank")
+    void login_BlankPassword() throws Exception {
+        LoginRequestDTO blankPasswordDTO = LoginRequestDTO.builder()
+                .username("testuser")
+                .password("")
+                .build();
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(blankPasswordDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").value("Password is required"));
+
+        verify(authenticationManager, never()).authenticate(any());
     }
 }

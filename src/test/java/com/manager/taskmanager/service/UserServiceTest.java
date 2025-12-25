@@ -2,7 +2,9 @@ package com.manager.taskmanager.service;
 
 import com.manager.taskmanager.dto.UserRequestDTO;
 import com.manager.taskmanager.dto.UserResponseDTO;
-import com.manager.taskmanager.exception.TaskNotFoundException;
+import com.manager.taskmanager.exception.UserNotFoundException;
+import com.manager.taskmanager.exception.DuplicateResourceException;
+import com.manager.taskmanager.model.Role;
 import com.manager.taskmanager.model.User;
 import com.manager.taskmanager.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +55,7 @@ class UserServiceTest {
                 .username("testuser")
                 .email("test@example.com")
                 .password("encodedPassword")
+                .role(Role.USER)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -60,7 +63,7 @@ class UserServiceTest {
         userRequestDTO = UserRequestDTO.builder()
                 .username("newuser")
                 .email("newuser@example.com")
-                .password("password123")
+                .password("Password123")
                 .build();
 
         userResponseDTO = UserResponseDTO.builder()
@@ -73,6 +76,10 @@ class UserServiceTest {
     @Test
     @DisplayName("createUser should create user successfully")
     void createUser_Success() {
+        when(userRepository.findByUsername(userRequestDTO.getUsername()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail(userRequestDTO.getEmail()))
+                .thenReturn(Optional.empty());
         when(modelMapper.map(userRequestDTO, User.class))
                 .thenReturn(testUser);
         when(passwordEncoder.encode(anyString()))
@@ -88,8 +95,45 @@ class UserServiceTest {
         assertEquals("testuser", result.getUsername());
         assertEquals("test@example.com", result.getEmail());
 
+        verify(userRepository, times(1)).findByUsername(userRequestDTO.getUsername());
+        verify(userRepository, times(1)).findByEmail(userRequestDTO.getEmail());
         verify(passwordEncoder, times(1)).encode(anyString());
         verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("createUser should throw DuplicateResourceException when username exists")
+    void createUser_UsernameExists() {
+        when(userRepository.findByUsername(userRequestDTO.getUsername()))
+                .thenReturn(Optional.of(testUser));
+
+        assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.createUser(userRequestDTO),
+                "Username already exists"
+        );
+
+        verify(userRepository, times(1)).findByUsername(userRequestDTO.getUsername());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("createUser should throw DuplicateResourceException when email exists")
+    void createUser_EmailExists() {
+        when(userRepository.findByUsername(userRequestDTO.getUsername()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail(userRequestDTO.getEmail()))
+                .thenReturn(Optional.of(testUser));
+
+        assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.createUser(userRequestDTO),
+                "Email already exists"
+        );
+
+        verify(userRepository, times(1)).findByUsername(userRequestDTO.getUsername());
+        verify(userRepository, times(1)).findByEmail(userRequestDTO.getEmail());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -99,6 +143,7 @@ class UserServiceTest {
                 .id(2L)
                 .username("user2")
                 .email("user2@example.com")
+                .role(Role.USER)
                 .build();
 
         List<User> users = Arrays.asList(testUser, user2);
@@ -106,6 +151,7 @@ class UserServiceTest {
         UserResponseDTO dto2 = UserResponseDTO.builder()
                 .id(2L)
                 .username("user2")
+                .email("user2@example.com")
                 .build();
 
         when(userRepository.findAll()).thenReturn(users);
@@ -156,17 +202,19 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("getUserById should throw TaskNotFoundException when user not found")
+    @DisplayName("getUserById should throw UserNotFoundException when user not found")
     void getUserById_NotFound() {
         Long userId = 999L;
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                TaskNotFoundException.class,
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
                 () -> userService.getUserById(userId)
         );
+
+        assertEquals("User not found with id: 999", exception.getMessage());
 
         verify(userRepository, times(1)).findById(userId);
     }
@@ -179,12 +227,16 @@ class UserServiceTest {
         UserRequestDTO updateDTO = UserRequestDTO.builder()
                 .username("updateduser")
                 .email("updated@example.com")
-                .password("newpassword")
+                .password("NewPassword123")
                 .build();
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(testUser));
-        when(passwordEncoder.encode("newpassword"))
+        when(userRepository.findByUsername("updateduser"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail("updated@example.com"))
+                .thenReturn(Optional.empty());
+        when(passwordEncoder.encode("NewPassword123"))
                 .thenReturn("encodedNewPassword");
         when(userRepository.save(any(User.class)))
                 .thenReturn(testUser);
@@ -196,7 +248,7 @@ class UserServiceTest {
         assertNotNull(result);
 
         verify(userRepository, times(1)).findById(userId);
-        verify(passwordEncoder, times(1)).encode("newpassword");
+        verify(passwordEncoder, times(1)).encode("NewPassword123");
         verify(userRepository, times(1)).save(any(User.class));
     }
 
@@ -213,6 +265,8 @@ class UserServiceTest {
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsername("updateduser"))
+                .thenReturn(Optional.empty());
         when(userRepository.save(any(User.class)))
                 .thenReturn(testUser);
         when(modelMapper.map(testUser, UserResponseDTO.class))
@@ -232,12 +286,12 @@ class UserServiceTest {
         Long userId = 1L;
 
         UserRequestDTO updateDTO = UserRequestDTO.builder()
-                .password("newPassword123")
+                .password("NewPassword123")
                 .build();
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(testUser));
-        when(passwordEncoder.encode("newPassword123"))
+        when(passwordEncoder.encode("NewPassword123"))
                 .thenReturn("encodedPassword123");
         when(userRepository.save(any(User.class)))
                 .thenReturn(testUser);
@@ -246,21 +300,83 @@ class UserServiceTest {
 
         userService.updateUser(userId, updateDTO);
 
-        verify(passwordEncoder, times(1)).encode("newPassword123");
+        verify(passwordEncoder, times(1)).encode("NewPassword123");
     }
 
     @Test
-    @DisplayName("updateUser should throw TaskNotFoundException when user not found")
+    @DisplayName("updateUser should throw DuplicateResourceException when username already exists")
+    void updateUser_UsernameExists() {
+        Long userId = 1L;
+
+        User existingUser = User.builder()
+                .id(2L)
+                .username("existinguser")
+                .email("existing@example.com")
+                .build();
+
+        UserRequestDTO updateDTO = UserRequestDTO.builder()
+                .username("existinguser")
+                .build();
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsername("existinguser"))
+                .thenReturn(Optional.of(existingUser));
+
+        assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.updateUser(userId, updateDTO),
+                "Username already exists"
+        );
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateUser should throw DuplicateResourceException when email already exists")
+    void updateUser_EmailExists() {
+        Long userId = 1L;
+
+        User existingUser = User.builder()
+                .id(2L)
+                .username("existinguser")
+                .email("existing@example.com")
+                .build();
+
+        UserRequestDTO updateDTO = UserRequestDTO.builder()
+                .email("existing@example.com")
+                .build();
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("existing@example.com"))
+                .thenReturn(Optional.of(existingUser));
+
+        assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.updateUser(userId, updateDTO),
+                "Email already exists"
+        );
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateUser should throw UserNotFoundException when user not found")
     void updateUser_NotFound() {
         Long userId = 999L;
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                TaskNotFoundException.class,
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
                 () -> userService.updateUser(userId, userRequestDTO)
         );
+
+        assertEquals("User not found with id: 999", exception.getMessage());
 
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, never()).save(any());
@@ -282,17 +398,19 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("deleteUser should throw TaskNotFoundException when user not found")
+    @DisplayName("deleteUser should throw UserNotFoundException when user not found")
     void deleteUser_NotFound() {
         Long userId = 999L;
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                TaskNotFoundException.class,
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
                 () -> userService.deleteUser(userId)
         );
+
+        assertEquals("User not found with id: 999", exception.getMessage());
 
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, never()).delete(any(User.class));

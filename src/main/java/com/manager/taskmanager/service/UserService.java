@@ -2,7 +2,9 @@ package com.manager.taskmanager.service;
 
 import com.manager.taskmanager.dto.UserRequestDTO;
 import com.manager.taskmanager.dto.UserResponseDTO;
-import com.manager.taskmanager.exception.TaskNotFoundException;
+import com.manager.taskmanager.exception.UserNotFoundException;
+import com.manager.taskmanager.exception.DuplicateResourceException;
+import com.manager.taskmanager.model.Role;
 import com.manager.taskmanager.model.User;
 import com.manager.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +31,20 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO createUser(UserRequestDTO dto) {
-        User user = modelMapper.map(dto, User.class);
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            throw new DuplicateResourceException("Username already exists");
+        }
 
-        if (user.getPassword() != null) user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new DuplicateResourceException("Email already exists");
+        }
+
+        User user = modelMapper.map(dto, User.class);
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
 
         User savedUser = userRepository.save(user);
         return mapToDTO(savedUser);
@@ -46,19 +59,35 @@ public class UserService {
 
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
         return mapToDTO(user);
     }
 
     @Transactional
     public UserResponseDTO updateUser(Long id, UserRequestDTO dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
-        if (dto.getUsername() != null) user.setUsername(dto.getUsername());
-        if (dto.getEmail() != null) user.setEmail(dto.getEmail());
+        // Check for duplicate username if changed
+        if (dto.getUsername() != null && !dto.getUsername().equals(user.getUsername())) {
+            if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+                throw new DuplicateResourceException("Username already exists");
+            }
+            user.setUsername(dto.getUsername());
+        }
 
-        if (dto.getPassword() != null) user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        // Check for duplicate email if changed
+        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
+            if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+                throw new DuplicateResourceException("Email already exists");
+            }
+            user.setEmail(dto.getEmail());
+        }
+
+        // Update password if provided (already validated by @Valid)
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
 
         User updatedUser = userRepository.save(user);
         return mapToDTO(updatedUser);
@@ -67,7 +96,7 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
         userRepository.delete(user);
     }
 }

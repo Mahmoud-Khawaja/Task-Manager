@@ -56,8 +56,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            logger.error("JWT token expired: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"JWT token has expired\"}");
+            return;
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            logger.error("JWT token malformed: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Invalid JWT token\"}");
+            return;
+        } catch (io.jsonwebtoken.SignatureException e) {
+            logger.error("JWT signature invalid: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"JWT signature verification failed\"}");
+            return;
         } catch (Exception e) {
-            logger.error("JWT validation error: " + e.getMessage());
+            logger.error("JWT processing error: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Authentication processing failed\"}");
+            return;
         }
 
         filterChain.doFilter(request, response);

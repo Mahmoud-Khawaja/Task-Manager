@@ -3,7 +3,7 @@ package com.manager.taskmanager.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.manager.taskmanager.dto.UserRequestDTO;
 import com.manager.taskmanager.dto.UserResponseDTO;
-import com.manager.taskmanager.exception.TaskNotFoundException;
+import com.manager.taskmanager.exception.UserNotFoundException;
 import com.manager.taskmanager.model.Role;
 import com.manager.taskmanager.model.User;
 import com.manager.taskmanager.repository.UserRepository;
@@ -76,7 +76,7 @@ class UserControllerTest {
         userRequestDTO = UserRequestDTO.builder()
                 .username("newuser")
                 .email("newuser@example.com")
-                .password("password123")
+                .password("Password123")
                 .build();
 
         userResponseDTO = UserResponseDTO.builder()
@@ -104,6 +104,27 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.email", is("test@example.com")));
 
         verify(userService, times(1)).createUser(any(UserRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("POST /api/users - Should return 400 when password is invalid")
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void createUser_InvalidPassword() throws Exception {
+        UserRequestDTO invalidDTO = UserRequestDTO.builder()
+                .username("newuser")
+                .email("newuser@example.com")
+                .password("password")
+                .build();
+
+        mockMvc.perform(post("/api/users")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").exists());
+
+        verify(userService, never()).createUser(any());
     }
 
     @Test
@@ -201,12 +222,13 @@ class UserControllerTest {
         when(userRepository.findByUsername("admin"))
                 .thenReturn(Optional.of(adminUser));
         when(userService.getUserById(userId))
-                .thenThrow(new TaskNotFoundException("User not found"));
+                .thenThrow(new UserNotFoundException("User not found with id: 999"));
 
         mockMvc.perform(get("/api/users/{id}", userId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("User not found with id: 999"));
     }
 
     @Test
@@ -279,6 +301,32 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("PUT /api/users/{id} - Should return 400 when password is invalid")
+    @WithMockUser(username = "testuser", roles = "USER")
+    void updateUser_InvalidPassword() throws Exception {
+        Long userId = 1L;
+
+        UserRequestDTO invalidDTO = UserRequestDTO.builder()
+                .username("updateduser")
+                .email("updated@example.com")
+                .password("weak") // Invalid password
+                .build();
+
+        when(userRepository.findByUsername("testuser"))
+                .thenReturn(Optional.of(testUser));
+
+        mockMvc.perform(put("/api/users/{id}", userId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").exists());
+
+        verify(userService, never()).updateUser(any(), any());
+    }
+
+    @Test
     @DisplayName("DELETE /api/users/{id} - Admin should delete user")
     @WithMockUser(username = "admin", roles = "ADMIN")
     void deleteUser_Success() throws Exception {
@@ -290,6 +338,24 @@ class UserControllerTest {
                         .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isNoContent());
+
+        verify(userService, times(1)).deleteUser(userId);
+    }
+
+    @Test
+    @DisplayName("DELETE /api/users/{id} - Should return 404 when user not found")
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void deleteUser_NotFound() throws Exception {
+        Long userId = 999L;
+
+        doThrow(new UserNotFoundException("User not found with id: 999"))
+                .when(userService).deleteUser(userId);
+
+        mockMvc.perform(delete("/api/users/{id}", userId)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("User not found with id: 999"));
 
         verify(userService, times(1)).deleteUser(userId);
     }
