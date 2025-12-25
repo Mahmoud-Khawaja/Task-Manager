@@ -12,9 +12,6 @@ COPY pages /usr/share/nginx/html/pages
 COPY css /usr/share/nginx/html/css
 COPY js /usr/share/nginx/html/js
 
-RUN mkdir -p /usr/share/nginx/html/assets
-COPY assets/* /usr/share/nginx/html/assets/ 2>/dev/null || true
-
 # Fix permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
