@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tasks - TaskManager</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/tasks.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="tasks-page">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-brand">
+            <i class="fas fa-tasks"></i>
+            <span>TaskManager</span>
+        </div>
+        <button class="sidebar-close" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" onclick="filterTasks('all')">
+            <i class="fas fa-list"></i>
+            <span>All Tasks</span>
+            <span class="badge" id="allCount">0</span>
+        </a>
+        <a href="#" class="nav-item" onclick="filterTasks('TODO')">
+            <i class="fas fa-circle"></i>
+            <span>To Do</span>
+            <span class="badge" id="todoCount">0</span>
+        </a>
+        <a href="#" class="nav-item" onclick="filterTasks('IN_PROGRESS')">
+            <i class="fas fa-spinner"></i>
+            <span>In Progress</span>
+            <span class="badge" id="progressCount">0</span>
+        </a>
+        <a href="#" class="nav-item" onclick="filterTasks('DONE')">
+            <i class="fas fa-check-circle"></i>
+            <span>Done</span>
+            <span class="badge" id="doneCount">0</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-email" id="userEmail"></div>
+            </div>
+        </div>
+        <button class="btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </button>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title">My Tasks</h1>
+        <button class="btn-add-task" onclick="openTaskModal()">
+            <i class="fas fa-plus"></i>
+            <span>New Task</span>
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalTasks">0</h3>
+                <p>Total Tasks</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="pendingTasks">0</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="inProgressTasks">0</h3>
+                <p>In Progress</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="completedTasks">0</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Container -->
+    <div class="tasks-container">
+        <div class="tasks-header">
+            <h2>Tasks</h2>
+            <div class="tasks-filter">
+                <select id="filterSelect" onchange="applyFilter()">
+                    <option value="all">All Tasks</option>
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="DONE">Done</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="tasksGrid" class="tasks-grid">
+            <!-- Tasks will be loaded here -->
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-inbox"></i>
+            <h3>No tasks found</h3>
+            <p>Create your first task to get started!</p>
+            <button class="btn-primary" onclick="openTaskModal()">
+                <i class="fas fa-plus"></i> Create Task
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- Task Modal -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Create New Task</h2>
+            <button class="modal-close" onclick="closeTaskModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="taskForm">
+            <input type="hidden" id="taskId">
+
+            <div class="form-group">
+                <label for="taskTitle">Task Title</label>
+                <input
+                        type="text"
+                        id="taskTitle"
+                        placeholder="Enter task title"
+                        required
+                        minlength="3"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="taskDescription">Description</label>
+                <textarea
+                        id="taskDescription"
+                        rows="4"
+                        placeholder="Enter task description"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="taskStatus">Status</label>
+                <select id="taskStatus">
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="DONE">Done</option>
+                </select>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeTaskModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary" id="saveTaskBtn">
+                    <span class="btn-text">Save Task</span>
+                    <span class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Saving...
+                        </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/tasks.js"></script>
+</body>
+</html>

@@ -1,20 +1,29 @@
-.git
-.gitignore
-
 target/
+!target/*.jar
+
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+.git/
+.gitignore
 
 logs/
 *.log
 
-.env
-.env.*
-
-.idea
-.vscode
-*.iml
+docker-compose*.yml
+Dockerfile
+.dockerignore
 
 .DS_Store
 Thumbs.db
 
-docker-compose.yml
-docker-compose.prod.yml
+.env
+.env.local
+
+.mvn/wrapper/maven-wrapper.jar
+
+src/test/
